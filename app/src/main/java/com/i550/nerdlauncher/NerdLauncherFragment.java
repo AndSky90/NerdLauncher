@@ -2,6 +2,7 @@ package com.i550.nerdlauncher;
 
 
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.os.Bundle;
@@ -37,7 +38,7 @@ public class NerdLauncherFragment extends Fragment{
     }
 
     public void setupAdapter() { //нам не надо нихрена запускать, поэтому не вызываем шузер и старт, а делаем вот так
-        Intent startupIntent = new Intent(Intent.ACTION_MAIN); //создаем интент с запросом =действия мэйн
+        Intent startupIntent = new Intent(Intent.ACTION_MAIN); //создаем интент с запросом =действия мэйн (реагирует как обычный запуск)
         startupIntent.addCategory(Intent.CATEGORY_LAUNCHER);    // добавляем запрос =категории ланчер
         PackageManager pm = getActivity().getPackageManager();  //достаем ПМ
         List<ResolveInfo> activities = pm.queryIntentActivities(startupIntent, 0); //находим список подходящих активити (пакедж мэн возвращает ResolveInfo)
@@ -59,13 +60,14 @@ public class NerdLauncherFragment extends Fragment{
 
     //_______________________________________________________________________________________________________________________
 
-     private class ActivityHolder extends RecyclerView.ViewHolder{          //реализация ViewHolder у recycleView
+     private class ActivityHolder extends RecyclerView.ViewHolder implements View.OnClickListener{          //реализация ViewHolder у recycleView
         private ResolveInfo mResolveInfo;
         private TextView mNameTextView;
 
         public ActivityHolder(View itemView){
             super(itemView);
             mNameTextView=(TextView)itemView;
+            mNameTextView.setOnClickListener(this); //назначаем листенер (при нажатии на пункт в списке активитей)
         }
         public void bindActivity(ResolveInfo resolveInfo){
             mResolveInfo=resolveInfo;
@@ -73,6 +75,14 @@ public class NerdLauncherFragment extends Fragment{
             String appName = mResolveInfo.loadLabel(pm).toString();
             mNameTextView.setText(appName);
         }
+
+         @Override
+         public void onClick(View v) {      //интент при нажатии на имя активити в списке активитей
+             ActivityInfo activityInfo = mResolveInfo.activityInfo;     //ActivityInfo это часть ResolveInfo
+             Intent i = new Intent(Intent.ACTION_MAIN).setClassName(activityInfo.applicationInfo.packageName, activityInfo.name);   //имя пакета и имя класса активности
+             startActivity(i);      //создается интент (pkgName,clsName) - получает ComponentName и по нему находит полное имя пакета вызываемой активити
+                                        //можно например public Intent setComponent(ComponentName c)
+         }
      }
 
     //_______________________________________________________________________________________________________________________
