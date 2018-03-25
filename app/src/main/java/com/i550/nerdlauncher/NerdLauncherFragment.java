@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -14,6 +16,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import java.util.Collections;
@@ -63,23 +67,30 @@ public class NerdLauncherFragment extends Fragment{
      private class ActivityHolder extends RecyclerView.ViewHolder implements View.OnClickListener{          //реализация ViewHolder у recycleView
         private ResolveInfo mResolveInfo;
         private TextView mNameTextView;
+        private ImageView mImageView;
+        private LinearLayout mLinearLayout;
 
         public ActivityHolder(View itemView){
             super(itemView);
-            mNameTextView=(TextView)itemView;
-            mNameTextView.setOnClickListener(this); //назначаем листенер (при нажатии на пункт в списке активитей)
+            mImageView=itemView.findViewById(R.id.image1);
+            mNameTextView=itemView.findViewById(R.id.text1);
+            mLinearLayout=itemView.findViewById(R.id.layout1);
+            mLinearLayout.setOnClickListener(this); //назначаем листенер (при нажатии на пункт в списке активитей)
         }
         public void bindActivity(ResolveInfo resolveInfo){
             mResolveInfo=resolveInfo;
             PackageManager pm = getActivity().getPackageManager();
             String appName = mResolveInfo.loadLabel(pm).toString();
             mNameTextView.setText(appName);
+            Drawable appIcon = mResolveInfo.loadIcon(pm);
+            mImageView.setImageDrawable(appIcon);
         }
 
          @Override
          public void onClick(View v) {      //интент при нажатии на имя активити в списке активитей
              ActivityInfo activityInfo = mResolveInfo.activityInfo;     //ActivityInfo это часть ResolveInfo
-             Intent i = new Intent(Intent.ACTION_MAIN).setClassName(activityInfo.applicationInfo.packageName, activityInfo.name);   //имя пакета и имя класса активности
+             Intent i = new Intent(Intent.ACTION_MAIN).setClassName(activityInfo.applicationInfo.packageName, activityInfo.name) //имя пакета и имя класса активности
+                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);  //чтобы новая активность запускалась как новая задача (отдельным процессом)
              startActivity(i);      //создается интент (pkgName,clsName) - получает ComponentName и по нему находит полное имя пакета вызываемой активити
                                         //можно например public Intent setComponent(ComponentName c)
          }
@@ -98,7 +109,7 @@ public class NerdLauncherFragment extends Fragment{
         @Override
         public ActivityHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             LayoutInflater layoutInflater = LayoutInflater.from(getActivity());
-            View view = layoutInflater.inflate(android.R.layout.simple_list_item_1,parent,false);
+            View view = layoutInflater.inflate(R.layout.list_activities, parent,false);   //шаблон по которому раздувается список во вьюшке
             return new ActivityHolder(view);
         }
 
