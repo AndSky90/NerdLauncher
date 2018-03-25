@@ -13,7 +13,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class NerdLauncherFragment extends Fragment{
@@ -33,11 +36,74 @@ public class NerdLauncherFragment extends Fragment{
         return v;
     }
 
-    public void setupAdapter(){
-        Intent startupIntent = new Intent(Intent.ACTION_MAIN); //создаем интент
-        startupIntent.addCategory(Intent.CATEGORY_LAUNCHER);    // добавляем категорию лаунчер
-        PackageManager pm = getActivity().getPackageManager();  //достаем
-        List<ResolveInfo> activities = pm.queryIntentActivities(startupIntent,0);
-        Log.i(TAG,"Found " + activities.size() + " activities.");
+    public void setupAdapter() { //нам не надо нихрена запускать, поэтому не вызываем шузер и старт, а делаем вот так
+        Intent startupIntent = new Intent(Intent.ACTION_MAIN); //создаем интент с запросом =действия мэйн
+        startupIntent.addCategory(Intent.CATEGORY_LAUNCHER);    // добавляем запрос =категории ланчер
+        PackageManager pm = getActivity().getPackageManager();  //достаем ПМ
+        List<ResolveInfo> activities = pm.queryIntentActivities(startupIntent, 0); //находим список подходящих активити (пакедж мэн возвращает ResolveInfo)
+
+        Collections.sort(activities, new Comparator<ResolveInfo>() {    //ща как отсортируем компаратором
+                    @Override
+                    public int compare(ResolveInfo o1, ResolveInfo o2) {
+                        PackageManager pm = getActivity().getPackageManager();
+                        return String.CASE_INSENSITIVE_ORDER.compare(
+                                o1.loadLabel(pm).toString(),
+                                o2.loadLabel(pm).toString());
+                    }
+                }
+        );
+
+        Log.i(TAG, "Found " + activities.size() + " activities."); //ResolveInfo содержит всю инфу, метки, лейблы активностей
+        mRecyclerView.setAdapter(new ActivityAdapter(activities)); //setupAdapter создает экземпляр ActivityAdapter'a и назначает его адаптером RecycleView
     }
+
+    //_______________________________________________________________________________________________________________________
+
+     private class ActivityHolder extends RecyclerView.ViewHolder{          //реализация ViewHolder у recycleView
+        private ResolveInfo mResolveInfo;
+        private TextView mNameTextView;
+
+        public ActivityHolder(View itemView){
+            super(itemView);
+            mNameTextView=(TextView)itemView;
+        }
+        public void bindActivity(ResolveInfo resolveInfo){
+            mResolveInfo=resolveInfo;
+            PackageManager pm = getActivity().getPackageManager();
+            String appName = mResolveInfo.loadLabel(pm).toString();
+            mNameTextView.setText(appName);
+        }
+     }
+
+    //_______________________________________________________________________________________________________________________
+
+    private class ActivityAdapter extends RecyclerView.Adapter<ActivityHolder>{     //реализация адаптера у recycleView
+        private final List<ResolveInfo> mActivities;
+
+        public ActivityAdapter(List<ResolveInfo> activities){
+            mActivities=activities;
+        }
+
+
+        @Override
+        public ActivityHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            LayoutInflater layoutInflater = LayoutInflater.from(getActivity());
+            View view = layoutInflater.inflate(android.R.layout.simple_list_item_1,parent,false);
+            return new ActivityHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(ActivityHolder holder, int position) {
+            ResolveInfo resolveInfo = mActivities.get(position);
+            holder.bindActivity(resolveInfo);
+        }
+
+        @Override
+        public int getItemCount() {
+            return mActivities.size();
+        }
+    }
+
+
+
 }
